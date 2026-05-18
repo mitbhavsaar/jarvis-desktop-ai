@@ -1,52 +1,34 @@
 import time
-import config
-from core.listener import Listener
-from core.speaker import Speaker
-from core.brain import Brain
-from utils.helpers import get_greeting, clean_query
+from speech_engine import listen
+from brain import get_jarvis_response
+from audio_engine import speak
 
 def main():
-    listener = Listener()
-    speaker = Speaker()
-    brain = Brain()
-
-    greeting = get_greeting()
-    speaker.speak(f"{greeting}")
-
+    print("Initializing Jarvis...")
+    # Optional greeting
+    speak("System initialized. I am online and ready, sir.")
+    
     while True:
-        # Step 1: Listen for Command
-        query = listener.listen()
+        # 1. Listen to user
+        user_input = listen()
         
-        if not query:
+        if not user_input:
             continue
-
-        # Step 2: Decide if we should process
-        wake_words = [config.WAKE_WORD.lower(), "germs", "service", "garvis", "charvis"]
-        is_wake_word_present = any(w in query.lower() for w in wake_words)
+            
+        # Optional exit command
+        if user_input.lower() in ["exit", "quit", "stop listening", "goodbye", "bye jarvis"]:
+            speak("Goodbye sir. Have a great day!")
+            break
+            
+        # 2. Think (Send to Brain)
+        print(f"Thinking...")
+        response = get_jarvis_response(user_input)
         
-        # Check for direct strong commands even without wake word
-        # (e.g., "abhi kitne baje hai", "send message to...")
-        direct_commands = ["time", "baje", "samay", "vagya", "whatsapp", "message", "moklo", "bhejo", "open", "kholo"]
-        is_direct_command = any(word in query.lower() for word in direct_commands)
-
-        if is_wake_word_present or is_direct_command:
-            command = clean_query(query)
-            
-            # If it's just "Jarvis", ask for command
-            if not command and is_wake_word_present:
-                speaker.speak("Yes? I'm listening.")
-                command = listener.listen()
-            
-            if command:
-                if "exit" in command or "stop" in command or "bye" in command:
-                    speaker.speak("Goodbye!")
-                    break
-                
-                # Step 3: Process via Brain
-                response = brain.process_command(command)
-                
-                # Step 4: Speak Response
-                speaker.speak(response)
+        # 3. Speak the response
+        speak(response)
+        
+        # Small pause before listening again
+        time.sleep(0.5)
 
 if __name__ == "__main__":
     main()
